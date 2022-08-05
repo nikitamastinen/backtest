@@ -1,3 +1,5 @@
+#pragma once
+
 #include <ctime>
 #include <utility>
 #include <vector>

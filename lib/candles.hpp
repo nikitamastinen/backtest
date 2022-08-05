@@ -9,11 +9,11 @@
 
 namespace lib {
 
-//struct Candles() {
+//struct Candle() {
 //  void init(coin) {
 //  }
 //}
 
-void load_klines(const std::string& timeframe);
+std::vector<lib::Candle> load_klines(const std::string& timeframe);
 
 }  // namespace lib

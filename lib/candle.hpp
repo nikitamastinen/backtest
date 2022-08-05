@@ -5,6 +5,7 @@
 #include <boost/config.hpp>
 #include <boost/fusion/adapted/struct/adapt_struct.hpp>
 #include <boost/fusion/include/adapt_struct.hpp>
+#include <filesystem>
 
 #ifdef BOOST_HAS_PRAGMA_ONCE
 #pragma once
@@ -32,7 +33,7 @@ struct Input {
   double volume_base;
 };
 
-struct Kline {
+struct Candle {
   std::time_t time_open;
 
   double price_open;
@@ -52,20 +53,36 @@ struct Kline {
   double volume_buy_quote;
 
   double ignore;
+
+  [[nodiscard]] std::string toString() const {
+    std::string result = "priceOpen: " + std::to_string(price_open);
+    result += "\npriceClose: " + std::to_string(price_low);
+    result += "\npriceHigh: " + std::to_string(price_high);
+    result += "\npriceLow: " + std::to_string(price_low);
+
+    result += "\ntimeOpen: " + std::to_string(time_open);
+    result += "\ntimeClose: " + std::to_string(time_close);
+
+    return result;
+  }
+
+  [[maybe_unused]] void print() const {
+    std::cout << toString() << std::endl;
+  }
 };
 
 template < typename Iterator >
-class Kline_Parser : public boost::spirit::qi::grammar <
-                         Iterator, Kline(), boost::spirit::qi::blank_type >
+class CandleParser
+    : public boost::spirit::qi::grammar <
+                         Iterator, Candle(), boost::spirit::qi::blank_type >
 {
  private:
 
   using rule_t = boost::spirit::qi::rule <
-      Iterator, Kline(), boost::spirit::qi::blank_type > ;
+      Iterator, Candle(), boost::spirit::qi::blank_type > ;
 
  public:
-
-  Kline_Parser() : Kline_Parser::base_type(start)
+  CandleParser() : CandleParser::base_type(start)
   {
     start %=
         boost::spirit::qi::long_long  >> separator >> // time_open
@@ -83,7 +100,7 @@ class Kline_Parser : public boost::spirit::qi::grammar <
 
   }
 
-  ~Kline_Parser() noexcept = default;
+  ~CandleParser() noexcept = default;
 
  private:
 
@@ -96,7 +113,7 @@ class Kline_Parser : public boost::spirit::qi::grammar <
 }  // namespace lib
 
 BOOST_FUSION_ADAPT_STRUCT(
-    lib::Kline,
+    lib::Candle,
     (std::time_t, time_open)(double, price_open)(double, price_high)(
         double, price_low)(double, price_close)(double, volume_base)(
         std::time_t, time_close)(double, volume_quote)(std::size_t, n_trades)(

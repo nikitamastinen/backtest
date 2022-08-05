@@ -162,13 +162,13 @@ typedef long long ll;
 #include <rapidjson/ostreamwrapper.h>
 #include <iostream>
 #include "backtest/strategy.hpp"
+#include "backtest/backtest.hpp"
 
 using namespace rapidjson;
+//using namespace simdjson;
 
 int main() {
-
-  auto strategy = strategy::Strategy(
-      R"(D:\business\backtester\testData\simple_strategy.json)", "BTC");
-  strategy.print();
+  auto backTest = backTest::BackTest();
+  backTest.test(R"(D:\business\backtester\testData\simple_strategy.json)");
   return 0;
 }

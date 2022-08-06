@@ -23,6 +23,7 @@ class Trade {
     result += "\nfundBefore: " + std::to_string(fundBefore);
     result += "\nfundAfter: " + std::to_string(fundAfter);
     result += "\nreward: " + std::to_string(reward);
+    return result;
   }
 
   void print() const {

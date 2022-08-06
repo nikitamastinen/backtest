@@ -165,10 +165,18 @@ typedef long long ll;
 #include "backtest/backtest.hpp"
 
 using namespace rapidjson;
-//using namespace simdjson;
+// using namespace simdjson;
 
 int main() {
   auto backTest = backTest::BackTest();
-  backTest.test(R"(D:\business\backtester\testData\simple_strategy.json)");
+  backTest.candles = {lib::Candle{1654041600, 100, 0, 0, 100, 0, 1654056000},
+                      lib::Candle{1654056000, 105, 0, 0, 110, 0, 1654070400},
+                      lib::Candle{1654070400, 110, 0, 0, 115, 0, 1654084800},
+                      lib::Candle{1654084800, 110, 0, 0, 110, 0, 1654099200}};
+  auto r =
+      backTest.test(R"(D:\business\backtester\testData\simple_strategy.json)");
+  for (auto to : r) {
+    cout << to.toString() << std::endl << std::endl;
+  }
   return 0;
 }

@@ -56,9 +56,9 @@ struct Candle {
 
   [[nodiscard]] std::string toString() const {
     std::string result = "priceOpen: " + std::to_string(price_open);
-    result += "\npriceClose: " + std::to_string(price_low);
     result += "\npriceHigh: " + std::to_string(price_high);
     result += "\npriceLow: " + std::to_string(price_low);
+    result += "\npriceClose: " + std::to_string(price_close);
 
     result += "\ntimeOpen: " + std::to_string(time_open);
     result += "\ntimeClose: " + std::to_string(time_close);

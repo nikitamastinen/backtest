@@ -15,62 +15,129 @@ struct Proto {
 class BackTest {
  public:
   Proto proto;
+  std::map<std::string, std::vector<lib::Candle>> data;
 
-  std::map<std::string, std::vector<lib::Candle>> candles;
+  std::string coin = "BTC";
+  bool reinvest = false;
+  double fee = 0.002;
+
+  std::vector<lib::Candle> candles;
+  strategy::Strategy strategy;
 
   std::string position = "N";
+  double baseFund = 0;
+  double targetFund = 0;
+  double borrowedTargetFund = 0;
 
-  strategy::StrategyEvent event;
+  std::vector<strategy::StrategyEvent>::iterator eventIterator;
   std::vector<strategy::TradeParams>::iterator optionsIterator;
+
+  size_t candleIndex = 0;
 
  public:
   BackTest() {
-    candles["BTC"] = lib::load_klines("4h");
+    data["BTC"] = lib::load_klines("4h");
   }
 
-  void openShort(const strategy::StrategyEvent& e) {
-    position = proto.SHORT;
-    event = e;
-  }
+  void openPosition() {
+    position = eventIterator->position;
+    optionsIterator = eventIterator->options.begin();
 
-  void moveStopLoss() {
+    if (position == proto.LONG) {
+      targetFund += baseFund / candles[candleIndex].price_close;
+      targetFund -= baseFund * fee;
 
+      baseFund = 0;
+    }
+
+    if (position == proto.SHORT) {
+      borrowedTargetFund += baseFund / candles[candleIndex].price_close;
+      borrowedTargetFund -= baseFund * fee;
+
+      baseFund += baseFund;
+    }
   }
 
   void closePosition() {
+    if (position == proto.LONG) {  // пока что закрываем на всю сумму
+      double baseResult = targetFund * candles[candleIndex].price_close;
+      baseFund += baseResult;
+      baseFund -= baseResult * fee;
 
+      targetFund = 0;
+    }
+
+    if (position == proto.SHORT) {  // пока что закрываем всю сумму
+      double baseResult = borrowedTargetFund * candles[candleIndex].price_close;
+      baseFund -= baseResult;
+      baseFund -= baseResult * fee;
+
+      borrowedTargetFund = 0;
+    }
+
+    position = proto.UNSET;
   }
 
-  bool isPositionOpened() {
-
+  bool moveTradeParams() {
+    if (optionsIterator == eventIterator->options.end()) {
+      return false;
+    }
+    ++optionsIterator;
+    return true;
   }
 
-  bool isPositionClosed() {
-
+  bool isPositionOpened() const {
+    return position != proto.UNSET;
   }
 
-  bool isStopLossReached() {
-
+  bool isStopLossReached() const {
+    if (position == proto.LONG &&
+        candles[candleIndex].price_close <= optionsIterator->stopLoss) {
+      return true;
+    }
+    if (position == proto.SHORT &&
+        candles[candleIndex].price_close >= optionsIterator->stopLoss) {
+      return true;
+    }
+    return false;
   }
 
-  bool isTakeProfitReached() {
+  bool isTakeProfitReached() const {
+    if (position == proto.LONG &&
+        candles[candleIndex].price_close >= optionsIterator->takeProfit) {
+      return true;
+    }
+    if (position == proto.SHORT &&
+        candles[candleIndex].price_close <= optionsIterator->takeProfit) {
+      return true;
+    }
+    return false;
+  }
 
+  bool isClosePositionCondition() const {
+    if (isStopLossReached() ||
+        (isTakeProfitReached() &&
+         optionsIterator + 1 == eventIterator->options.end())) {
+      return true;
+    }
+    return false;
   }
 
   void test(const std::string& strategyAbsolutePath) {
     std::cout << "test started...\n";
-    auto strategy = strategy::Strategy(strategyAbsolutePath, "BTC");
 
-    strategy.print();
+    candles = data["BTC"];
+    strategy = strategy::Strategy(strategyAbsolutePath, "BTC");
 
-    for (int e = 0; e < strategy.events.size(); ++e) {
-      for (int c = 0; c < candles[strategy.coin].size(); ++c) {
-        if (isPositionClosed()) {
-          openPosition();
+
+    for (eventIterator = strategy.events.begin(); eventIterator != strategy.events.end(); ++eventIterator) {
+      for (candleIndex = 0; candleIndex < candles.size(); ++candleIndex) {
+        if (eventIterator->timestamp <= candles[candleIndex].time_close) {
+
         }
       }
     }
   }
 };
 
-}  // namespace lib
+}  // namespace backTest

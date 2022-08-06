@@ -6,7 +6,6 @@ message(STATUS "start running cmake...")
 
 include_directories("C:/Users/Nikita/Downloads/boost_1_79_0/boost_1_79_0")
 include_directories("C:/Users/Nikita/Downloads/rapidjson/include")
-include_directories("C:/Users/Nikita/Downloads/simdjson/include")
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -cl -pthread")

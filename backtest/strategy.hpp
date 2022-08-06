@@ -62,6 +62,8 @@ struct Strategy {
   std::vector<StrategyEvent> events;
   std::string coin;
 
+  Strategy() = default;
+
   Strategy(const std::string& absolutePath, std::string coin)
       : coin(std::move(coin)) {
     std::ifstream ifs{absolutePath};

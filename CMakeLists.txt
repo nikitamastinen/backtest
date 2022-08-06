@@ -19,4 +19,4 @@ add_executable(main
         lib/datetime.hpp
         backtest/backtest.hpp
         backtest/strategy.hpp
-        )
+        lib/trade.hpp)

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <string>
 #include <map>
 
@@ -17,76 +19,106 @@ struct Proto {
 
 class BackTest {
  public:
+  const double EPS = 1e-11;
+
   Proto proto;
   std::map<std::string, std::vector<lib::Candle>> data;
 
   std::string coin = "BTC";
-  bool isReinvest = false;
-  // double fee = 0.002;
-  double fee = 0;
+  bool isReinvest = true;
+  double fee = 0.002;
+  // double fee = 0;
 
   std::vector<lib::Candle> candles;
   strategy::Strategy strategy;
+  std::vector<lib::Trade> trades;
 
   std::string position = proto.UNSET;
 
-  double baseFundAtStart = 1000;
+  double baseFundAtStart = 100;
   double baseFund = 0;
   double targetFund = 0;
   double borrowedTargetFund = 0;
 
   double initialPrice = 0;
 
+  double upperPrice = 0;
+  double lowerPrice = 0;
+
   std::vector<strategy::StrategyEvent>::iterator eventIterator;
   std::vector<strategy::TradeParams>::iterator optionsIterator;
+
   size_t candleIndex = 0;
 
  public:
-  BackTest() {
+  explicit BackTest() {
     // data["BTC"] = lib::load_klines("4h");
   }
 
   void openPosition() {
+    // update trades
+    trades.push_back({
+        candles[candleIndex].time_close,
+        0,
+        eventIterator->position,
+        0,
+        0,
+        trades.empty() ? 0 : trades.back().reward,
+    });
+
     position = eventIterator->position;
     optionsIterator = eventIterator->options.begin();
 
     initialPrice = candles[candleIndex].price_close;
-    //    std::cout << initialPrice << std::endl;
-    double openFund = baseFund;
-    if (!isReinvest) {
-      openFund = std::min(baseFund, baseFundAtStart);
+    upperPrice = initialPrice;
+    lowerPrice = initialPrice;
+
+    if (!isReinvest && baseFund > baseFundAtStart) {
+      trades.back().reward += baseFund - baseFundAtStart;
+      baseFund = baseFundAtStart;
     }
 
     if (position == proto.LONG) {
+      trades.back().fundBefore = baseFund;
       targetFund +=
-          (openFund - openFund * fee) / candles[candleIndex].price_close;
-      baseFund -= openFund;
+          (baseFund - baseFund * fee) / candles[candleIndex].price_close;
+      baseFund = 0;
     }
 
     if (position == proto.SHORT) {
-      borrowedTargetFund += openFund / candles[candleIndex].price_close;
-      baseFund += openFund - openFund * fee;
+      trades.back().fundBefore = baseFund;
+
+      borrowedTargetFund += baseFund / candles[candleIndex].price_close;
+      baseFund += baseFund - baseFund * fee;
+      //std::cout << baseFund;
     }
   }
 
   void closePosition() {
     if (position == proto.LONG) {  // пока что закрываем на всю сумму
       double baseFundResult = targetFund * candles[candleIndex].price_close;
+      baseFundResult -= baseFundResult * fee;
       baseFund += baseFundResult;
-      baseFund -= baseFundResult * fee;
 
+      trades.back().fundAfter = baseFund;
       targetFund = 0;
     }
 
     if (position == proto.SHORT) {  // пока что закрываем всю сумму
       double baseFundResult =
           borrowedTargetFund * candles[candleIndex].price_close;
+      baseFundResult += baseFundResult * fee;
       baseFund -= baseFundResult;
-      baseFund -= baseFundResult * fee;
 
+      trades.back().fundAfter = baseFund;
       borrowedTargetFund = 0;
     }
 
+
+
+    // update trades
+    trades.back().closeTime = candles[candleIndex].time_close;
+    trades.back().reward += trades.back().fundAfter - trades.back().fundBefore;
     position = proto.UNSET;
   }
 
@@ -95,6 +127,11 @@ class BackTest {
       return false;
     }
     ++optionsIterator;
+    /*
+    Uncomment if you want to calculate the trailing relative to the new price,
+    otherwise everything is relative to the initial price.
+    */
+    // initialPrice = candles[candleIndex].price_close;
     return true;
   }
 
@@ -103,19 +140,21 @@ class BackTest {
   }
 
   bool isStopLossReached() const {
-    if (optionsIterator == eventIterator->options.end()) {
+    if (position == proto.UNSET ||
+        optionsIterator == eventIterator->options.end()) {
       return false;
     }
-
-    // std::cout << initialPrice << std::endl;
+    std::cerr << optionsIterator->isFixed << ' ' << upperPrice << std::endl;
     if (position == proto.LONG &&
-        candles[candleIndex].price_close <=
-            optionsIterator->stopLoss * initialPrice) {
+        candles[candleIndex].price_close - EPS <=
+            (optionsIterator->isFixed ? 0 : upperPrice - initialPrice) + optionsIterator->stopLoss *
+                initialPrice) {
       return true;
     }
     if (position == proto.SHORT &&
-        candles[candleIndex].price_close >=
-            optionsIterator->stopLoss * initialPrice) {
+        candles[candleIndex].price_close + EPS >=
+            (optionsIterator->isFixed ? 0 : lowerPrice - initialPrice) + optionsIterator->stopLoss *
+                initialPrice) {
       return true;
     }
     return false;
@@ -126,16 +165,13 @@ class BackTest {
       return false;
     }
     if (position == "L")
-      // std::cout << candles[candleIndex].price_close << ' ' <<
-      // optionsIterator->takeProfit * initialPrice << ' ' <<
-      // optionsIterator->takeProfit <<  std::endl;
       if (position == proto.LONG &&
-          candles[candleIndex].price_close >=
+          candles[candleIndex].price_close + EPS >=
               optionsIterator->takeProfit * initialPrice) {
         return true;
       }
     if (position == proto.SHORT &&
-        candles[candleIndex].price_close <=
+        candles[candleIndex].price_close - EPS <=
             optionsIterator->takeProfit * initialPrice) {
       return true;
     }
@@ -143,6 +179,9 @@ class BackTest {
   }
 
   bool isMoveTradeParamsCondition() const {
+    //    if (eventIterator->closeShort || eventIterator->closeLong) {
+    //      return false;
+    //    }
     if (optionsIterator == eventIterator->options.end()) {
       return false;
     }
@@ -151,10 +190,12 @@ class BackTest {
   }
 
   bool isClosePositionCondition() const {
-    if (isStopLossReached())
-      std::cout << "sl";
-    if (isTakeProfitReached())
-      std::cout << "tp";
+    //    if (position == proto.SHORT && eventIterator->closeShort) {
+    //      return true;
+    //    }
+    //    if (position == proto.LONG && eventIterator->closeLong) {
+    //      return true;
+    //    }
     if (isStopLossReached() ||
         (isTakeProfitReached() &&
          optionsIterator + 1 == eventIterator->options.end())) {
@@ -164,11 +205,14 @@ class BackTest {
   }
 
   bool isOpenPositionCondition() const {
-    if (eventIterator == strategy.events.end()) {
-      return false;
-    }
+    //    if (eventIterator == strategy.events.end() || eventIterator->closeLong
+    //    ||
+    //        eventIterator->closeShort) {
+    //      return false;
+    //    }
     if (!isPositionOpened() &&
-        eventIterator->timestamp <= candles[candleIndex].time_close) {
+        eventIterator->timestamp <= candles[candleIndex].time_close &&
+        eventIterator->timestamp >= candles[candleIndex].time_open) {
       return true;
     }
     return false;
@@ -177,53 +221,38 @@ class BackTest {
   std::vector<lib::Trade> test(const std::string& strategyAbsolutePath) {
     std::cout << "test started...\n";
 
-    std::vector<lib::Trade> trades;
     strategy = strategy::Strategy(strategyAbsolutePath, "BTC");
 
     candleIndex = 0;
     baseFund = baseFundAtStart;
     eventIterator = strategy.events.begin();
+    trades.clear();
 
     for (; candleIndex < candles.size(); ++candleIndex) {
-      if (isClosePositionCondition()) {
-        closePosition();
-
-        // update trades
-        trades.back().closeTime = candles[candleIndex].time_close;
-        trades.back().fundAfter = baseFund;
-        trades.back().reward =
-            trades.back().fundAfter - trades.back().fundBefore;
-
+      upperPrice = std::max(upperPrice, candles[candleIndex].price_close);
+      lowerPrice = std::min(lowerPrice, candles[candleIndex].price_close);
+      while (eventIterator != strategy.events.end() &&
+             !eventIterator->closeLong && !eventIterator->closeShort &&
+             eventIterator->timestamp < candles[candleIndex].time_open &&
+             !isPositionOpened()) {
         ++eventIterator;
+      }  // TODO consider case when force close
+      if (isClosePositionCondition() ||
+          (candleIndex + 1 == candles.size() && isPositionOpened())) {
+        closePosition();
+        ++eventIterator;
+      }
+      if (eventIterator == strategy.events.end()) {
         continue;
       }
       if (isOpenPositionCondition()) {
-        // update trades
-        trades.push_back({
-            eventIterator->timestamp,
-            0,
-            eventIterator->position,
-            baseFund,
-            0,
-            0,
-        });
-
         openPosition();
-        std::cout << baseFund << ' ' << targetFund << std::endl;
         continue;
       }
       if (isMoveTradeParamsCondition()) {
         // move stop-loss and take-profit
         moveTradeParams();
       }
-    }
-
-    if (isPositionOpened()) {
-      closePosition();
-
-      trades.back().closeTime = candles[candleIndex - 1].time_close;
-      trades.back().fundAfter = baseFund;
-      trades.back().reward = trades.back().fundAfter - trades.back().fundBefore;
     }
     return trades;
   }

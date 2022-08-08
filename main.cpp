@@ -169,10 +169,22 @@ using namespace rapidjson;
 
 int main() {
   auto backTest = backTest::BackTest();
-  backTest.candles = {lib::Candle{1654041600, 100, 0, 0, 100, 0, 1654056000},
-                      lib::Candle{1654056000, 105, 0, 0, 110, 0, 1654070400},
-                      lib::Candle{1654070400, 110, 0, 0, 115, 0, 1654084800},
-                      lib::Candle{1654084800, 110, 0, 0, 110, 0, 1654099200}};
+  backTest.candles = {lib::Candle{0, 100, 0, 0, 100, 0, 1},
+      lib::Candle{1, 100, 0, 0, 100, 0, 2},
+                      lib::Candle{2, 100, 0, 0, 95, 0, 3},
+                      lib::Candle{3, 95, 0, 0, 90, 0, 4},
+                      lib::Candle{4, 90, 0, 0, 95, 0, 5},
+                      lib::Candle{5, 95, 0, 0, 90, 0, 6},
+                      lib::Candle{6, 100, 0, 0, 95, 0, 7},
+                      lib::Candle{7, 105, 0, 0, 100, 0, 8},
+                      lib::Candle{8, 110, 0, 0, 105, 0, 9},
+                       lib::Candle{2, 100, 0, 0, 95, 0, 3},
+                       lib::Candle{3, 95, 0, 0, 90, 0, 4},
+                       lib::Candle{4, 90, 0, 0, 95, 0, 5},
+                       lib::Candle{5, 95, 0, 0, 90, 0, 6},
+                       lib::Candle{6, 100, 0, 0, 95, 0, 7},
+                       lib::Candle{7, 105, 0, 0, 100, 0, 8},
+                       lib::Candle{8, 110, 0, 0, 105, 0, 9}};
   auto r =
       backTest.test(R"(D:\business\backtester\testData\simple_strategy.json)");
   for (auto to : r) {

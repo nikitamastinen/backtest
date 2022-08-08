@@ -12,6 +12,7 @@ set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -cl -pthread")
 
 add_executable(main
         main.cpp
+        tests/simpleTests.hpp
         lib/candle.hpp
         lib/candles.cpp
         lib/candles.hpp

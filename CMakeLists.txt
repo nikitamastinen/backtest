@@ -6,9 +6,11 @@ message(STATUS "start running cmake...")
 
 include_directories("C:/Users/Nikita/Downloads/boost_1_79_0/boost_1_79_0")
 include_directories("C:/Users/Nikita/Downloads/rapidjson/include")
+include_directories("D:/business/backtester/sockets/CppSockets")
 
 set(CMAKE_CXX_STANDARD 23)
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -cl -pthread")
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Wall -cl -pthread -lwsock32")
+
 
 add_executable(main
         main.cpp
@@ -20,4 +22,4 @@ add_executable(main
         lib/datetime.hpp
         backtest/backtest.hpp
         backtest/strategy.hpp
-        lib/trade.hpp)
+        lib/trade.hpp backtest/controller.hpp)

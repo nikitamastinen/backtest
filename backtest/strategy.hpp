@@ -79,8 +79,8 @@ struct Strategy {
       StrategyEvent strategyEvent;
 
       strategyEvent.timestamp = static_cast<std::time_t>((*e)["t"].GetInt64());
+      strategyEvent.closeShort = (*e)["cs"].GetBool();
       strategyEvent.closeLong = (*e)["cl"].GetBool();
-      strategyEvent.closeLong = (*e)["cs"].GetBool();
       strategyEvent.position = (*e)["p"].GetString();
       strategyEvent.timeLimit = static_cast<std::time_t>((*e)["tl"].GetInt64());
 

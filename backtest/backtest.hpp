@@ -46,6 +46,8 @@ class BackTest {
   double lowerPrice = 0;
 
   std::vector<strategy::StrategyEvent>::iterator eventIterator;
+  std::vector<strategy::StrategyEvent>::iterator closeEventIterator;
+
   std::vector<strategy::TradeParams>::iterator optionsIterator;
 
   size_t candleIndex = 0;
@@ -90,7 +92,6 @@ class BackTest {
 
       borrowedTargetFund += baseFund / candles[candleIndex].price_close;
       baseFund += baseFund - baseFund * fee;
-      //std::cout << baseFund;
     }
   }
 
@@ -113,8 +114,6 @@ class BackTest {
       trades.back().fundAfter = baseFund;
       borrowedTargetFund = 0;
     }
-
-
 
     // update trades
     trades.back().closeTime = candles[candleIndex].time_close;
@@ -147,14 +146,14 @@ class BackTest {
     std::cerr << optionsIterator->isFixed << ' ' << upperPrice << std::endl;
     if (position == proto.LONG &&
         candles[candleIndex].price_close - EPS <=
-            (optionsIterator->isFixed ? 0 : upperPrice - initialPrice) + optionsIterator->stopLoss *
-                initialPrice) {
+            (optionsIterator->isFixed ? 0 : upperPrice - initialPrice) +
+                optionsIterator->stopLoss * initialPrice) {
       return true;
     }
     if (position == proto.SHORT &&
         candles[candleIndex].price_close + EPS >=
-            (optionsIterator->isFixed ? 0 : lowerPrice - initialPrice) + optionsIterator->stopLoss *
-                initialPrice) {
+            (optionsIterator->isFixed ? 0 : lowerPrice - initialPrice) +
+                optionsIterator->stopLoss * initialPrice) {
       return true;
     }
     return false;
@@ -226,17 +225,40 @@ class BackTest {
     candleIndex = 0;
     baseFund = baseFundAtStart;
     eventIterator = strategy.events.begin();
+    closeEventIterator = strategy.events.begin();
+
     trades.clear();
 
     for (; candleIndex < candles.size(); ++candleIndex) {
       upperPrice = std::max(upperPrice, candles[candleIndex].price_close);
       lowerPrice = std::min(lowerPrice, candles[candleIndex].price_close);
+
+      while (closeEventIterator != strategy.events.end() &&
+             closeEventIterator->timestamp < candles[candleIndex].time_open &&
+             !closeEventIterator->closeLong &&
+             !closeEventIterator->closeShort) {
+        ++closeEventIterator;
+      }
+
+      if (closeEventIterator != strategy.events.end() &&
+          closeEventIterator->timestamp <= candles[candleIndex].time_close) {
+        if (closeEventIterator->closeShort && position == proto.SHORT) {
+          std::cout << candles[candleIndex].time_open << ' ' <<  closeEventIterator->timestamp << endl;
+          closePosition();
+          ++closeEventIterator;
+        } else if (closeEventIterator->closeLong && position == proto.LONG) {
+          closePosition();
+          ++closeEventIterator;
+        }
+      }
+
       while (eventIterator != strategy.events.end() &&
-             !eventIterator->closeLong && !eventIterator->closeShort &&
-             eventIterator->timestamp < candles[candleIndex].time_open &&
-             !isPositionOpened()) {
+             (eventIterator->timestamp < candles[candleIndex].time_open &&
+                  !isPositionOpened() ||
+              eventIterator->closeShort || eventIterator->closeLong)) {
         ++eventIterator;
-      }  // TODO consider case when force close
+      }
+
       if (isClosePositionCondition() ||
           (candleIndex + 1 == candles.size() && isPositionOpened())) {
         closePosition();

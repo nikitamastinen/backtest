@@ -5,6 +5,7 @@
 #include <cstdlib>
 #include "lib/candles.hpp"
 #include <boost/json.hpp>
+//#include "backtest/controller.hpp"
 
 using std::string;
 using std::unordered_map;
@@ -161,6 +162,7 @@ typedef long long ll;
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/ostreamwrapper.h>
 #include <iostream>
+//#include <boost/asio/io_service.hpp>
 #include "backtest/strategy.hpp"
 #include "backtest/backtest.hpp"
 
@@ -169,22 +171,22 @@ using namespace rapidjson;
 
 int main() {
   auto backTest = backTest::BackTest();
-  backTest.candles = {lib::Candle{0, 100, 0, 0, 100, 0, 1},
-      lib::Candle{1, 100, 0, 0, 100, 0, 2},
-                      lib::Candle{2, 100, 0, 0, 95, 0, 3},
-                      lib::Candle{3, 95, 0, 0, 90, 0, 4},
-                      lib::Candle{4, 90, 0, 0, 95, 0, 5},
-                      lib::Candle{5, 95, 0, 0, 90, 0, 6},
-                      lib::Candle{6, 100, 0, 0, 95, 0, 7},
-                      lib::Candle{7, 105, 0, 0, 100, 0, 8},
-                      lib::Candle{8, 110, 0, 0, 105, 0, 9},
-                       lib::Candle{2, 100, 0, 0, 95, 0, 3},
-                       lib::Candle{3, 95, 0, 0, 90, 0, 4},
-                       lib::Candle{4, 90, 0, 0, 95, 0, 5},
-                       lib::Candle{5, 95, 0, 0, 90, 0, 6},
-                       lib::Candle{6, 100, 0, 0, 95, 0, 7},
-                       lib::Candle{7, 105, 0, 0, 100, 0, 8},
-                       lib::Candle{8, 110, 0, 0, 105, 0, 9}};
+  backTest.candles = {lib::Candle{0, 100, 0, 0, 100, 0, 10},
+      lib::Candle{10, 100, 0, 0, 100, 0, 20},
+                      lib::Candle{20, 100, 0, 0, 95, 0, 30},
+                      lib::Candle{30, 95, 0, 0, 90, 0, 40},
+                      lib::Candle{40, 90, 0, 0, 91, 0, 50},
+                      lib::Candle{50, 91, 0, 0, 92, 0, 60},
+                      lib::Candle{60, 92, 0, 0, 95, 0, 70},
+                      lib::Candle{70, 95, 0, 0, 110, 0, 80},
+                      lib::Candle{80, 110, 0, 0, 105, 0, 90},
+                       lib::Candle{90, 105, 0, 0, 95, 0, 100},
+                       lib::Candle{100, 95, 0, 0, 90, 0, 110},
+                       lib::Candle{110, 90, 0, 0, 95, 0, 120},
+                       lib::Candle{120, 95, 0, 0, 90, 0, 130},
+                       lib::Candle{130, 100, 0, 0, 95, 0, 140},
+                       lib::Candle{140, 105, 0, 0, 100, 0, 150},
+                       lib::Candle{150, 110, 0, 0, 105, 0, 160}};
   auto r =
       backTest.test(R"(D:\business\backtester\testData\simple_strategy.json)");
   for (auto to : r) {
@@ -192,3 +194,8 @@ int main() {
   }
   return 0;
 }
+
+//int main() {
+//  controller::run();
+//  return 0;
+//}

@@ -4,7 +4,6 @@
 #include "../shared/config.hpp"
 
 namespace lib {
-
 struct Config {
   const std::string system = "system";
 
@@ -75,7 +74,7 @@ std::string make_klines_file_name(const std::string& coin, std::time_t year,
     const auto separator = '-';
 
     std::stringstream sout;
-    Config m_config;
+    // Config m_config;
     sout << coin << separator << timeframe << separator << year << separator
          << std::setw(2) << std::setfill('0') << std::right << month << ".csv";
     return sout.str();
@@ -90,12 +89,11 @@ std::vector<lib::Candle> loadCandles(const std::string& coin,
 
   std::vector<Candle> klines;
 
-  std::time_t first_year = 2022;
-  std::time_t first_month = 1;
+  std::time_t first_year = shared::Config::getInstance().startYear;
+  std::time_t first_month = shared::Config::getInstance().startMonth;
 
-  Config m_config;
-  std::time_t last_year = 2022;
-  std::time_t last_month = 5;
+  std::time_t last_year = shared::Config::getInstance().endYear;
+  std::time_t last_month = shared::Config::getInstance().endMonth;
 
   for (std::time_t year = 2015; year <= 2022; ++year) {
     for (std::time_t month = 1; month <= 12; ++month) {
@@ -104,7 +102,8 @@ std::vector<lib::Candle> loadCandles(const std::string& coin,
         continue;
       }
 
-      std::filesystem::path path{R"(D:\business\backtester\data)"};
+      std::filesystem::path path{
+          shared::Config::getInstance().dataDirectoryPath};
       path /= make_klines_file_name(coin, year, month, timeframe);
 
       if (!std::filesystem::exists(path)) {
@@ -152,12 +151,12 @@ std::vector<lib::Candle> loadCandles(const std::string& coin,
 }
 
 std::map<std::string, std::vector<lib::Candle>> readData() {
-  std::ifstream input(shared::Config::getInstance().getPairsFilePath());
+  std::ifstream input(shared::Config::getInstance().pairsFilePath);
 
   std::map<std::string, std::vector<lib::Candle>> result;
 
   for (std::string line; getline(input, line);) {
-    auto current = loadCandles(line, "5m");
+    auto current = loadCandles(line, shared::Config::getInstance().timeframe);
     for (auto& to : current) {
       to.time_close /= 1000;
       to.time_open /= 1000;

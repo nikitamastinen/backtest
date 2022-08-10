@@ -14,6 +14,8 @@
 #include <rapidjson/ostreamwrapper.h>
 #include <iostream>
 
+#include "../shared/config.hpp"
+
 namespace strategy {
 
 struct TradeParams {
@@ -61,9 +63,10 @@ struct StrategyEvent {
 struct Strategy {
   std::vector<StrategyEvent> events;
   std::string coin = "BTC";
-  bool isReinvest = false;
-  double baseFundAtStart = 100;
-  double fee = 0.002;
+  bool isReinvest = shared::Config::getInstance().isReinvest;
+  double baseFundAtStart = shared::Config::getInstance().baseFundAtStart;
+  double fee = shared::Config::getInstance().fee;
+
 
   Strategy() = default;
 
@@ -83,25 +86,7 @@ struct Strategy {
       if (document.HasMember("coin")) {
         coin = document["coin"].GetString();
       } else {
-        std::cout << "strategy: amount doesn't set, default 1000\n";
-      }
-
-      if (document.HasMember("amount")) {
-        baseFundAtStart = document["amount"].GetDouble();
-      } else {
-        std::cout << "strategy: getAmount doesn't set, default 1000\n";
-      }
-
-      if (document.HasMember("reinvest")) {
-        isReinvest = document["reinvest"].GetBool();
-      } else {
-        std::cout << "strategy: getReinvest doesn't set, default false\n";
-      }
-
-      if (document.HasMember("fee")) {
-        fee = document["fee"].GetDouble();
-      } else {
-        std::cout << "strategy: fee doesn't set, default 0.002\n";
+        std::cout << "strategy: coin doesn't set, default BTC\n";
       }
     }
 

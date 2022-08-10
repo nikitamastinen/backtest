@@ -1,5 +1,16 @@
 {
-  "reinvest":false,
-  "timeframe":"1",
-  "basefund"
+  "baseAsset": "USDT",
+  "timeframe" : "5m",
+
+  "startYear" : 2022,
+  "startMonth" : 1,
+  "endYear" : 2022,
+  "endMonth" : 5,
+
+  "baseFundAtStart" : 100,
+  "fee" : 0.002,
+  "isReinvest" : false,
+
+  "dataDirectoryPath" : "D:\\business\\backtester\\data\\",
+  "pairsFilePath" : "D:\\business\\backtester\\data\\pairs.txt"
 }

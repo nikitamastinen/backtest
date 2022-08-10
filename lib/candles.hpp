@@ -15,5 +15,6 @@ namespace lib {
 //}
 
 std::vector<lib::Candle> load_klines(const std::string& timeframe);
+std::map<std::string, std::vector<lib::Candle>> readData();
 
 }  // namespace lib

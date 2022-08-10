@@ -17,23 +17,23 @@
 namespace strategy {
 
 struct TradeParams {
-  double takeProfit; // t
-  double stopLoss; // s
-  bool isFixed; // f
+  double takeProfit;  // t
+  double stopLoss;    // s
+  bool isFixed;       // f
 };
 
 struct StrategyEvent {
  public:
-  std::time_t timestamp{}; // t
+  std::time_t timestamp{};  // t
 
-  bool closeLong = false; // cl
-  bool closeShort = false; // cs
+  bool closeLong = false;   // cl
+  bool closeShort = false;  // cs
 
-  std::string position; // p
+  std::string position;  // p
 
-  std::time_t timeLimit{}; //tl
+  std::time_t timeLimit{};  // tl
 
-  std::vector<TradeParams> options; // o
+  std::vector<TradeParams> options;  // o
  public:
   [[nodiscard]] std::string toString() const {
     std::string result = "timestamp: " + std::to_string(timestamp);
@@ -60,20 +60,51 @@ struct StrategyEvent {
 
 struct Strategy {
   std::vector<StrategyEvent> events;
-  std::string coin;
+  std::string coin = "BTC";
+  bool isReinvest = false;
+  double baseFundAtStart = 100;
+  double fee = 0.002;
 
   Strategy() = default;
 
-  Strategy(const std::string& absolutePath, std::string coin)
-      : coin(std::move(coin)) {
+  explicit Strategy(const std::string& absolutePath) {
     std::ifstream ifs{absolutePath};
     if (!ifs.is_open()) {
       throw std::runtime_error("can't open file with strategy");
     }
     rapidjson::IStreamWrapper isw{ifs};
-    rapidjson::Document d;
+    rapidjson::Document document;
 
-    d.ParseStream(isw);
+    document.ParseStream(isw);
+
+    const rapidjson::Value& d = document["strategy"];
+
+    {
+      if (document.HasMember("coin")) {
+        coin = document["coin"].GetString();
+      } else {
+        std::cout << "strategy: amount doesn't set, default 1000\n";
+      }
+
+      if (document.HasMember("amount")) {
+        baseFundAtStart = document["amount"].GetDouble();
+      } else {
+        std::cout << "strategy: getAmount doesn't set, default 1000\n";
+      }
+
+      if (document.HasMember("reinvest")) {
+        isReinvest = document["reinvest"].GetBool();
+      } else {
+        std::cout << "strategy: getReinvest doesn't set, default false\n";
+      }
+
+      if (document.HasMember("fee")) {
+        fee = document["fee"].GetDouble();
+      } else {
+        std::cout << "strategy: fee doesn't set, default 0.002\n";
+      }
+    }
+
     for (rapidjson::Value::ConstValueIterator e = d.Begin(); e != d.End();
          ++e) {
       StrategyEvent strategyEvent;
@@ -97,7 +128,6 @@ struct Strategy {
       events.push_back(std::move(strategyEvent));
     }
   }
-
 
   [[nodiscard]] std::string toString() const {
     std::string result = "coin: " + coin + "\n";

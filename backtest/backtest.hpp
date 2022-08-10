@@ -6,6 +6,7 @@
 #include "../lib/candle.hpp"
 #include "../lib/candles.hpp"
 #include "../lib/trade.hpp"
+#include "../shared/config.hpp"
 
 #include "strategy.hpp"
 
@@ -54,7 +55,7 @@ class BackTest {
 
  public:
   explicit BackTest() {
-    // data["BTC"] = lib::load_klines("4h");
+    data = lib::readData();
   }
 
   void openPosition() {
@@ -122,7 +123,7 @@ class BackTest {
   }
 
   bool moveTradeParams() {
-    if (optionsIterator == eventIterator->options.end()) {
+    if (!isPositionOpened() || optionsIterator == eventIterator->options.end()) {
       return false;
     }
     ++optionsIterator;
@@ -139,11 +140,11 @@ class BackTest {
   }
 
   bool isStopLossReached() const {
-    if (position == proto.UNSET ||
+    if (!isPositionOpened() ||
         optionsIterator == eventIterator->options.end()) {
       return false;
     }
-    std::cerr << optionsIterator->isFixed << ' ' << upperPrice << std::endl;
+    //std::cerr << optionsIterator->isFixed << ' ' << upperPrice << std::endl;
     if (position == proto.LONG &&
         candles[candleIndex].price_close - EPS <=
             (optionsIterator->isFixed ? 0 : upperPrice - initialPrice) +
@@ -160,7 +161,7 @@ class BackTest {
   }
 
   bool isTakeProfitReached() const {
-    if (optionsIterator == eventIterator->options.end()) {
+    if (!isPositionOpened() || optionsIterator == eventIterator->options.end()) {
       return false;
     }
     if (position == "L")
@@ -178,10 +179,7 @@ class BackTest {
   }
 
   bool isMoveTradeParamsCondition() const {
-    //    if (eventIterator->closeShort || eventIterator->closeLong) {
-    //      return false;
-    //    }
-    if (optionsIterator == eventIterator->options.end()) {
+    if (!isPositionOpened() || optionsIterator == eventIterator->options.end()) {
       return false;
     }
     return isTakeProfitReached() &&
@@ -189,12 +187,6 @@ class BackTest {
   }
 
   bool isClosePositionCondition() const {
-    //    if (position == proto.SHORT && eventIterator->closeShort) {
-    //      return true;
-    //    }
-    //    if (position == proto.LONG && eventIterator->closeLong) {
-    //      return true;
-    //    }
     if (isStopLossReached() ||
         (isTakeProfitReached() &&
          optionsIterator + 1 == eventIterator->options.end())) {
@@ -204,11 +196,6 @@ class BackTest {
   }
 
   bool isOpenPositionCondition() const {
-    //    if (eventIterator == strategy.events.end() || eventIterator->closeLong
-    //    ||
-    //        eventIterator->closeShort) {
-    //      return false;
-    //    }
     if (!isPositionOpened() &&
         eventIterator->timestamp <= candles[candleIndex].time_close &&
         eventIterator->timestamp >= candles[candleIndex].time_open) {
@@ -220,7 +207,13 @@ class BackTest {
   std::vector<lib::Trade> test(const std::string& strategyAbsolutePath) {
     std::cout << "test started...\n";
 
-    strategy = strategy::Strategy(strategyAbsolutePath, "BTC");
+    strategy = strategy::Strategy(strategyAbsolutePath);
+    coin = strategy.coin;
+    isReinvest = strategy.isReinvest;
+    baseFundAtStart = strategy.baseFundAtStart;
+    fee = strategy.fee;
+
+    candles = data[coin];
 
     candleIndex = 0;
     baseFund = baseFundAtStart;
@@ -229,21 +222,21 @@ class BackTest {
 
     trades.clear();
 
+    std::cout << candles[candleIndex].time_close << std::endl;
     for (; candleIndex < candles.size(); ++candleIndex) {
       upperPrice = std::max(upperPrice, candles[candleIndex].price_close);
       lowerPrice = std::min(lowerPrice, candles[candleIndex].price_close);
 
-      while (closeEventIterator != strategy.events.end() &&
-             closeEventIterator->timestamp < candles[candleIndex].time_open &&
+      while (closeEventIterator != strategy.events.end() && (
+             closeEventIterator->timestamp < candles[candleIndex].time_open ||
              !closeEventIterator->closeLong &&
-             !closeEventIterator->closeShort) {
+             !closeEventIterator->closeShort)) {
         ++closeEventIterator;
       }
 
       if (closeEventIterator != strategy.events.end() &&
           closeEventIterator->timestamp <= candles[candleIndex].time_close) {
         if (closeEventIterator->closeShort && position == proto.SHORT) {
-          std::cout << candles[candleIndex].time_open << ' ' <<  closeEventIterator->timestamp << endl;
           closePosition();
           ++closeEventIterator;
         } else if (closeEventIterator->closeLong && position == proto.LONG) {

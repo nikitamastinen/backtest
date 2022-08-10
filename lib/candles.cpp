@@ -1,6 +1,8 @@
 #include "candles.hpp"
 #include <iomanip>
 
+#include "../shared/config.hpp"
+
 namespace lib {
 
 struct Config {
@@ -40,14 +42,7 @@ struct Config {
   const std::string has_reinvestment = "has_reinvestment";
   const std::string investment = "investment";
   const std::string commission = "commission";
-
   const std::string need_report = "need_report";
-
-  //   const std::string trailing          = "trailing";
-  const std::string stop_loss = "stop_loss";
-  const std::string current_state = "current_state";
-  const std::string price_trade = "price_trade";
-  const std::string price_stop_loss = "price_stop_loss";
 };
 
 Candle parseCandles(const std::string& line) {
@@ -73,33 +68,34 @@ Candle parseCandles(const std::string& line) {
   }
 }
 
-std::string make_klines_file_name(std::time_t year, std::time_t month,
+std::string make_klines_file_name(const std::string& coin, std::time_t year,
+                                  std::time_t month,
                                   const std::string& timeframe) {
   try {
     const auto separator = '-';
 
     std::stringstream sout;
     Config m_config;
-    sout << m_config.asset << separator << timeframe << separator << year
-         << separator << std::setw(2) << std::setfill('0') << std::right
-         << month << ".csv";
+    sout << coin << separator << timeframe << separator << year << separator
+         << std::setw(2) << std::setfill('0') << std::right << month << ".csv";
     return sout.str();
   } catch (const std::exception& exception) {
     throw std::runtime_error("cannot make candles filename");
   }
 }
 
-std::vector<lib::Candle> load_klines(const std::string& timeframe) {
+std::vector<lib::Candle> loadCandles(const std::string& coin,
+                                     const std::string& timeframe) {
   const auto epsilon = std::numeric_limits<double>::epsilon();
 
   std::vector<Candle> klines;
 
   std::time_t first_year = 2022;
-  std::time_t first_month = 5;
+  std::time_t first_month = 1;
 
   Config m_config;
   std::time_t last_year = 2022;
-  std::time_t last_month = 6;
+  std::time_t last_month = 5;
 
   for (std::time_t year = 2015; year <= 2022; ++year) {
     for (std::time_t month = 1; month <= 12; ++month) {
@@ -109,8 +105,7 @@ std::vector<lib::Candle> load_klines(const std::string& timeframe) {
       }
 
       std::filesystem::path path{R"(D:\business\backtester\data)"};
-      path /=
-          make_klines_file_name(year, month, timeframe);
+      path /= make_klines_file_name(coin, year, month, timeframe);
 
       if (!std::filesystem::exists(path)) {
         throw std::runtime_error(
@@ -154,6 +149,23 @@ std::vector<lib::Candle> load_klines(const std::string& timeframe) {
             });
 
   return klines;
+}
+
+std::map<std::string, std::vector<lib::Candle>> readData() {
+  std::ifstream input(shared::Config::getInstance().getPairsFilePath());
+
+  std::map<std::string, std::vector<lib::Candle>> result;
+
+  for (std::string line; getline(input, line);) {
+    auto current = loadCandles(line, "5m");
+    for (auto& to : current) {
+      to.time_close /= 1000;
+      to.time_open /= 1000;
+    }
+    result[line.substr(0, line.size() - 4)] = std::move(current);
+    std::cout << line << std::endl;
+  }
+  return result;
 }
 
 }  // namespace lib

@@ -42,9 +42,12 @@ void createJsonReport(const std::vector<lib::Trade>& trades,
   rapidjson::OStreamWrapper osw(ofs);
 
   rapidjson::Writer<rapidjson::OStreamWrapper> writer(osw);
-  std::cout << "st" << std::endl;
   rapidjson::Document document = convertTradesToRapidJson(trades);
   document.Accept(writer);
+}
+
+void createCSVReport() {
+
 }
 
 }  // namespace report

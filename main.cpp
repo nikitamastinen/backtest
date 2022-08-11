@@ -3,6 +3,7 @@
 #include "backtest/backtest.hpp"
 #include "backtest/controller.hpp"
 #include "shared/config.hpp"
+#include "report/report.hpp"
 
 int main(int argc, char* argv[]) {
   if (argc != 2) {
@@ -14,11 +15,14 @@ int main(int argc, char* argv[]) {
 
   auto backTest = backTest::BackTest();
 
-  controller::run([&backTest](const std::string& s) {
-    auto r = backTest.test(s);
+  controller::run([&backTest](const std::string& swapFilePath) {
+    auto r = backTest.test(swapFilePath);
+    report::createJsonReport(
+        r, swapFilePath.substr(0, swapFilePath.size() - 5) + "_metafile.json");
     for (const auto& to : r) {
-      std::cout << to.toString();
+      std::cout << to.toString() << std::endl << std::endl;
     }
+    std::cout << std::endl << std::endl;
   });
 
   return 0;

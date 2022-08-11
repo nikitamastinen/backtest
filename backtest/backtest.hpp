@@ -76,8 +76,8 @@ class BackTest {
     upperPrice = initialPrice;
     lowerPrice = initialPrice;
 
-    if (!isReinvest && baseFund > baseFundAtStart) {
-      trades.back().reward += baseFund - baseFundAtStart;
+    if (!isReinvest && (trades.empty() || trades.back().reward > 0)) {
+      //trades.back().reward += baseFund - baseFundAtStart;
       baseFund = baseFundAtStart;
     }
 
@@ -118,12 +118,16 @@ class BackTest {
 
     // update trades
     trades.back().closeTime = candles[candleIndex].time_close;
+    std::cerr << trades.back().reward << std::endl;
     trades.back().reward += trades.back().fundAfter - trades.back().fundBefore;
+    std::cerr << trades.back().reward << ' ' << trades.back().fundAfter << ' '
+              << trades.back().fundBefore << std::endl;
     position = proto.UNSET;
   }
 
   bool moveTradeParams() {
-    if (!isPositionOpened() || optionsIterator == eventIterator->options.end()) {
+    if (!isPositionOpened() ||
+        optionsIterator == eventIterator->options.end()) {
       return false;
     }
     ++optionsIterator;
@@ -144,7 +148,7 @@ class BackTest {
         optionsIterator == eventIterator->options.end()) {
       return false;
     }
-    //std::cerr << optionsIterator->isFixed << ' ' << upperPrice << std::endl;
+    // std::cerr << optionsIterator->isFixed << ' ' << upperPrice << std::endl;
     if (position == proto.LONG &&
         candles[candleIndex].price_close - EPS <=
             (optionsIterator->isFixed ? 0 : upperPrice - initialPrice) +
@@ -161,7 +165,8 @@ class BackTest {
   }
 
   bool isTakeProfitReached() const {
-    if (!isPositionOpened() || optionsIterator == eventIterator->options.end()) {
+    if (!isPositionOpened() ||
+        optionsIterator == eventIterator->options.end()) {
       return false;
     }
     if (position == "L")
@@ -179,7 +184,8 @@ class BackTest {
   }
 
   bool isMoveTradeParamsCondition() const {
-    if (!isPositionOpened() || optionsIterator == eventIterator->options.end()) {
+    if (!isPositionOpened() ||
+        optionsIterator == eventIterator->options.end()) {
       return false;
     }
     return isTakeProfitReached() &&
@@ -209,9 +215,10 @@ class BackTest {
 
     strategy = strategy::Strategy(strategyAbsolutePath);
     coin = strategy.coin;
-    isReinvest = strategy.isReinvest;
-    baseFundAtStart = strategy.baseFundAtStart;
-    fee = strategy.fee;
+
+    isReinvest = shared::Config::getInstance().isReinvest;
+    baseFundAtStart = shared::Config::getInstance().baseFundAtStart;
+    fee = shared::Config::getInstance().fee;
 
     candles = data[coin];
 
@@ -227,10 +234,10 @@ class BackTest {
       upperPrice = std::max(upperPrice, candles[candleIndex].price_close);
       lowerPrice = std::min(lowerPrice, candles[candleIndex].price_close);
 
-      while (closeEventIterator != strategy.events.end() && (
-             closeEventIterator->timestamp < candles[candleIndex].time_open ||
-             !closeEventIterator->closeLong &&
-             !closeEventIterator->closeShort)) {
+      while (closeEventIterator != strategy.events.end() &&
+             (closeEventIterator->timestamp < candles[candleIndex].time_open ||
+              (!closeEventIterator->closeLong &&
+               !closeEventIterator->closeShort))) {
         ++closeEventIterator;
       }
 
@@ -246,8 +253,8 @@ class BackTest {
       }
 
       while (eventIterator != strategy.events.end() &&
-             (eventIterator->timestamp < candles[candleIndex].time_open &&
-                  !isPositionOpened() ||
+             ((eventIterator->timestamp < candles[candleIndex].time_open &&
+               !isPositionOpened()) ||
               eventIterator->closeShort || eventIterator->closeLong)) {
         ++eventIterator;
       }

@@ -33,7 +33,7 @@ struct StrategyEvent {
 
   std::string position;  // p
 
-  std::time_t timeLimit{};  // tl
+  std::time_t timeLimit{0};  // tl
 
   std::vector<TradeParams> options;  // o
  public:
@@ -63,9 +63,6 @@ struct StrategyEvent {
 struct Strategy {
   std::vector<StrategyEvent> events;
   std::string coin = "BTC";
-  bool isReinvest = shared::Config::getInstance().isReinvest;
-  double baseFundAtStart = shared::Config::getInstance().baseFundAtStart;
-  double fee = shared::Config::getInstance().fee;
 
 
   Strategy() = default;
@@ -98,7 +95,7 @@ struct Strategy {
       strategyEvent.closeShort = (*e)["cs"].GetBool();
       strategyEvent.closeLong = (*e)["cl"].GetBool();
       strategyEvent.position = (*e)["p"].GetString();
-      strategyEvent.timeLimit = static_cast<std::time_t>((*e)["tl"].GetInt64());
+      //strategyEvent.timeLimit = static_cast<std::time_t>((*e)["tl"].GetInt64());
 
       std::vector<TradeParams> options;
       rapidjson::GenericArray<

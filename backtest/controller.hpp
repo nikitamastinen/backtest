@@ -31,15 +31,21 @@ class Session : public std::enable_shared_from_this<Session> {
           if (!ec) {
             std::cout << data_ << std::endl;
             action(std::string(data_));
-            do_write(length);
+            do_write(length, data_);
           }
         });
   }
 
-  void do_write(std::size_t length) {
+  void do_write(std::size_t length, const std::string& response = "") {
     auto self(shared_from_this());
+
+    std::string resultPath = response.substr(0, response.size() - 5);
+    resultPath += "_metafile.json";
+    auto resultResponse = resultPath.c_str();
+    std::cout << resultPath.c_str() << std::endl;
+
     boost::asio::async_write(
-        socket_, boost::asio::buffer("ready", length),
+        socket_, boost::asio::buffer(resultResponse, strnlen_s(resultResponse, max_length)),
         [this, self](boost::system::error_code ec, std::size_t /*length*/) {
           if (!ec) {
             do_read();
@@ -48,7 +54,7 @@ class Session : public std::enable_shared_from_this<Session> {
   }
 
   tcp::socket socket_;
-  enum { max_length = 1024 };
+  enum { max_length = 2048 };
   char data_[max_length]{};
   std::function<void(std::string)> action;
 };

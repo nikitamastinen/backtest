@@ -24,6 +24,6 @@ add_executable(main
         lib/datetime.hpp
         backtest/backtest.hpp
         backtest/strategy.hpp
-        lib/trade.hpp backtest/controller.hpp shared/config.hpp shared/config.cpp)
+        lib/trade.hpp backtest/controller.hpp shared/config.hpp shared/config.cpp report/report.hpp)
 
 target_link_libraries(main ${Boost_LIBRARIES})

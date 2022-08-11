@@ -1,8 +1,5 @@
 {
-  "reinvest": false,
   "coin": "BTC",
-  "amount": 100,
-  "fee": 0.002,
   "strategy": [
     {
       "t": 1643679300,

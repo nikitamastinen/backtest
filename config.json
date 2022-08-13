@@ -11,6 +11,10 @@
   "fee" : 0.002,
   "isReinvest" : false,
 
+  "isLoadReport": false,
+
+  "reportDirectoryPath": "D:\\business\\backtester\\.report",
+
   "dataDirectoryPath" : "D:\\business\\backtester\\data\\",
   "pairsFilePath" : "D:\\business\\backtester\\data\\pairs.txt"
 }

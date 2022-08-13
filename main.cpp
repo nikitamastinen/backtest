@@ -17,11 +17,18 @@ int main(int argc, char* argv[]) {
 
   controller::run([&backTest](const std::string& swapFilePath) {
     auto r = backTest.test(swapFilePath);
+
     report::createJsonReport(
         r, swapFilePath.substr(0, swapFilePath.size() - 5) + "_metafile.json");
+
+    if (shared::Config::getInstance().isLoadReport) {
+      report::createCSVReport(backTest.coin, r);
+    }
+
     for (const auto& to : r) {
       std::cout << to.toString() << std::endl << std::endl;
     }
+
     std::cout << std::endl << std::endl;
   });
 

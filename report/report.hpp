@@ -32,7 +32,6 @@ rapidjson::Document convertTradesToRapidJson(
       value.AddMember("fa", trade.fundAfter, allocator);
       document.PushBack(value, allocator);
     }
-    std::cout << document.Size() << std::endl;
   return document;
 }
 
@@ -46,8 +45,8 @@ void createJsonReport(const std::vector<lib::Trade>& trades,
   document.Accept(writer);
 }
 
-void createCSVReport() {
-
+void createCSVReport(const std::string& coin, const std::vector<lib::Trade>& trades) {
+  
 }
 
 }  // namespace report

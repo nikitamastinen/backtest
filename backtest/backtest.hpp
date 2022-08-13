@@ -18,6 +18,10 @@ struct Proto {
   const std::string UNSET = "N";
 };
 
+class Reward {
+
+};
+
 class BackTest {
  public:
   const double EPS = 1e-11;
@@ -229,7 +233,6 @@ class BackTest {
 
     trades.clear();
 
-    std::cout << candles[candleIndex].time_close << std::endl;
     for (; candleIndex < candles.size(); ++candleIndex) {
       upperPrice = std::max(upperPrice, candles[candleIndex].price_close);
       lowerPrice = std::min(lowerPrice, candles[candleIndex].price_close);

@@ -32,6 +32,8 @@ class Config {
 
   bool isReinvest = false;
 
+  bool isLoadReport = false;
+
   std::string dataDirectoryPath = R"(D:\business\backtester\data\)";
   std::string pairsFilePath = R"(D:\business\backtester\data\pairs.txt)";
 
@@ -56,6 +58,8 @@ class Config {
 
     fee = document["fee"].GetDouble();
     isReinvest = document["isReinvest"].GetBool();
+
+    isLoadReport = document["isLoadReport"].GetBool();
 
     dataDirectoryPath = document["dataDirectoryPath"].GetString();
     pairsFilePath = document["pairsFilePath"].GetString();

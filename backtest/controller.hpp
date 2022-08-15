@@ -83,11 +83,11 @@ class Server {
   std::function<void(std::string)> action;
 };
 
-int run(Action action) {
+int run(const Action& action) {
   try {
     boost::asio::io_context io_context;
 
-    Server s(io_context, 8000, std::move(action));
+    Server s(io_context, shared::Config::getInstance().port, std::move(action));
 
     io_context.run();
   } catch (std::exception& e) {

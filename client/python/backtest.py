@@ -1,7 +1,7 @@
 from datetime import datetime
 
-import ujson
 import time
+import ujson
 from typing import Dict, List, Any
 import socket
 
@@ -72,30 +72,16 @@ def test(swap_path: str, coin: str, strategy: List[StrategyEvent], host="127.0.0
     serialized_strategy = {"coin": coin, "strategy": [i.dict() for i in strategy]}
     strategy_path = swap_path + f"\\{coin}_{int(time.time())}.json"
 
-    print("serialized request", time.time() - start)
-    start = time.time()
-
     with open(strategy_path, "w+") as out:
         ujson.dump(serialized_strategy, out)
-
-    print("dump", time.time() - start)
-    start = time.time()
 
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.connect((host, port))
         s.sendall(strategy_path.encode())
 
-        print("send", time.time() - start)
-        start = time.time()
-
         metafile_path = s.recv(1024)
-
-        print("receive", time.time() - start)
 
         with open(metafile_path, "r+") as inp:
             result = ujson.load(inp)
-
-        print("serialized response", time.time() - start)
-        start = time.time()
 
         return [Trade(i) for i in result]

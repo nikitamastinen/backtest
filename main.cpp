@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
         r, swapFilePath.substr(0, swapFilePath.size() - 5) + "_metafile.json");
 
     if (shared::Config::getInstance().isLoadReport) {
-      report::createCSVReport(backTest.coin, r);
+      report::createCSVReport(backTest.coin, r, backTest.report);
     }
 
     for (const auto& to : r) {

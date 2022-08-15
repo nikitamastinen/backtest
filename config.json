@@ -1,4 +1,5 @@
 {
+  "port": 8000,
   "baseAsset": "USDT",
   "timeframe" : "5m",
 
@@ -11,8 +12,7 @@
   "fee" : 0.002,
   "isReinvest" : false,
 
-  "isLoadReport": false,
-
+  "isLoadReport": true,
   "reportDirectoryPath": "D:\\business\\backtester\\.report",
 
   "dataDirectoryPath" : "D:\\business\\backtester\\data\\",

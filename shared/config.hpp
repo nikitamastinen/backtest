@@ -18,6 +18,8 @@ class Config {
  public:
   std::string configPath;
 
+  int port = 8000;
+
   std::string baseAsset = "USDT";
   std::string timeframe = "5m";
 
@@ -34,8 +36,9 @@ class Config {
 
   bool isLoadReport = false;
 
-  std::string dataDirectoryPath = R"(D:\business\backtester\data\)";
-  std::string pairsFilePath = R"(D:\business\backtester\data\pairs.txt)";
+  std::string reportDirectoryPath;
+  std::string dataDirectoryPath;
+  std::string pairsFilePath;
 
   void update() {
     std::ifstream ifs{configPath};
@@ -45,6 +48,8 @@ class Config {
     rapidjson::IStreamWrapper isw{ifs};
     rapidjson::Document document;
     document.ParseStream(isw);
+
+    port = document["port"].GetInt();
 
     baseAsset = document["baseAsset"].GetString();
     timeframe = document["timeframe"].GetString();
@@ -61,6 +66,7 @@ class Config {
 
     isLoadReport = document["isLoadReport"].GetBool();
 
+    reportDirectoryPath = document["reportDirectoryPath"].GetString();
     dataDirectoryPath = document["dataDirectoryPath"].GetString();
     pairsFilePath = document["pairsFilePath"].GetString();
   }

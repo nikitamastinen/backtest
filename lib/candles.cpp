@@ -155,6 +155,7 @@ std::map<std::string, std::vector<lib::Candle>> readData() {
 
   std::map<std::string, std::vector<lib::Candle>> result;
 
+  std::cout << "candles loading...\n";
   for (std::string line; getline(input, line);) {
     auto current = loadCandles(line, shared::Config::getInstance().timeframe);
     for (auto& to : current) {
@@ -162,8 +163,9 @@ std::map<std::string, std::vector<lib::Candle>> readData() {
       to.time_open /= 1000;
     }
     result[line.substr(0, line.size() - 4)] = std::move(current);
-    std::cout << line << std::endl;
+//    std::cout << line << std::endl;
   }
+  std::cout << "candles loaded\n";
   return result;
 }
 

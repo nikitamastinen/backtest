@@ -7,6 +7,7 @@
 #include "../lib/candles.hpp"
 #include "../lib/trade.hpp"
 #include "../shared/config.hpp"
+#include "../report/report.hpp"
 
 #include "strategy.hpp"
 
@@ -16,10 +17,6 @@ struct Proto {
   const std::string SHORT = "S";
   const std::string LONG = "L";
   const std::string UNSET = "N";
-};
-
-class Reward {
-
 };
 
 class BackTest {
@@ -52,10 +49,11 @@ class BackTest {
 
   std::vector<strategy::StrategyEvent>::iterator eventIterator;
   std::vector<strategy::StrategyEvent>::iterator closeEventIterator;
-
   std::vector<strategy::TradeParams>::iterator optionsIterator;
 
   size_t candleIndex = 0;
+
+  report::Report report;
 
  public:
   explicit BackTest() {
@@ -81,7 +79,7 @@ class BackTest {
     lowerPrice = initialPrice;
 
     if (!isReinvest && (trades.empty() || trades.back().reward > 0)) {
-      //trades.back().reward += baseFund - baseFundAtStart;
+      // trades.back().reward += baseFund - baseFundAtStart;
       baseFund = baseFundAtStart;
     }
 
@@ -122,10 +120,7 @@ class BackTest {
 
     // update trades
     trades.back().closeTime = candles[candleIndex].time_close;
-    std::cerr << trades.back().reward << std::endl;
     trades.back().reward += trades.back().fundAfter - trades.back().fundBefore;
-    std::cerr << trades.back().reward << ' ' << trades.back().fundAfter << ' '
-              << trades.back().fundBefore << std::endl;
     position = proto.UNSET;
   }
 
@@ -187,6 +182,67 @@ class BackTest {
     return false;
   }
 
+  void fillBuyHoldReports() {
+    double currentTargetFund =
+        (baseFundAtStart - baseFundAtStart * fee) / candles[0].price_close;
+    double baseFundResultEnd = currentTargetFund * candles.back().price_close;
+    baseFundResultEnd -= baseFundResultEnd * fee;
+
+    double baseFundResult = currentTargetFund * candles[candleIndex].price_close;
+    baseFundResult -= baseFundResult * fee;
+    double currentBaseFund = baseFundResult;
+
+    if (candleIndex == 0) {
+      report.tradesBH.push_back({
+          candles[0].time_close,
+          candles.back().time_close,
+          proto.LONG,
+          0,
+          0,
+          baseFundResultEnd - baseFundAtStart,
+      });
+    }
+    report.positionsBH.push_back({candles[candleIndex].time_close, currentBaseFund});
+
+    // report.rewardsBH.push_back({candles[candleIndex].time_close, 1});
+    report.rewardsBH.push_back(
+        {candles[candleIndex].time_close, currentBaseFund - baseFundAtStart});
+
+  }
+
+  void fillReports() {
+    double currentBaseFund = baseFund;
+
+    if (position == proto.LONG) {  // пока что закрываем на всю сумму
+      double baseFundResult = targetFund * candles[candleIndex].price_close;
+      baseFundResult -= baseFundResult * fee;
+
+      currentBaseFund += baseFundResult;
+    }
+
+    if (position == proto.SHORT) {  // пока что закрываем всю сумму
+      double baseFundResult =
+          borrowedTargetFund * candles[candleIndex].price_close;
+      baseFundResult += baseFundResult * fee;
+      currentBaseFund -= baseFundResult;
+    }
+
+    if (isPositionOpened()) {
+      // report.positionsBH.push_back({candles[candleIndex].time_close, 1});
+      report.positionsHS.push_back(
+          {candles[candleIndex].time_close, currentBaseFund});
+    } else {
+      report.positionsHS.push_back({candles[candleIndex].time_close, 0});
+    }
+    // report.rewardsBH.push_back({candles[candleIndex].time_close, 1});
+    report.rewardsHS.push_back(
+        {candles[candleIndex].time_close,
+         (trades.empty() ? 0
+                         : currentBaseFund - trades.back().fundBefore +
+                               trades.back().reward)});
+
+  }
+
   bool isMoveTradeParamsCondition() const {
     if (!isPositionOpened() ||
         optionsIterator == eventIterator->options.end()) {
@@ -224,6 +280,8 @@ class BackTest {
     baseFundAtStart = shared::Config::getInstance().baseFundAtStart;
     fee = shared::Config::getInstance().fee;
 
+    bool isLoadReport = shared::Config::getInstance().isLoadReport;
+
     candles = data[coin];
 
     candleIndex = 0;
@@ -234,6 +292,11 @@ class BackTest {
     trades.clear();
 
     for (; candleIndex < candles.size(); ++candleIndex) {
+      if (isLoadReport) {
+        fillBuyHoldReports();
+        fillReports();
+      }
+
       upperPrice = std::max(upperPrice, candles[candleIndex].price_close);
       lowerPrice = std::min(lowerPrice, candles[candleIndex].price_close);
 

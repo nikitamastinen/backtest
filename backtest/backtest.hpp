@@ -278,8 +278,14 @@ class BackTest {
 
     isReinvest = shared::Config::getInstance().isReinvest;
     baseFundAtStart = shared::Config::getInstance().baseFundAtStart;
-    fee = shared::Config::getInstance().fee;
+    targetFund = 0;
+    borrowedTargetFund = 0;
 
+    upperPrice = 0;
+    lowerPrice = 0;
+    initialPrice = 0;
+
+    fee = shared::Config::getInstance().fee;
     bool isLoadReport = shared::Config::getInstance().isLoadReport;
 
     candles = data[coin];
@@ -291,6 +297,7 @@ class BackTest {
 
     trades.clear();
 
+    std::cout << "run" << std::endl;
     for (; candleIndex < candles.size(); ++candleIndex) {
       if (isLoadReport) {
         fillBuyHoldReports();
@@ -342,6 +349,7 @@ class BackTest {
         moveTradeParams();
       }
     }
+    std::cout << "Test finished" << std::endl;
     return trades;
   }
 };

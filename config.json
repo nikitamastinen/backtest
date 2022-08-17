@@ -1,20 +1,20 @@
 {
   "port": 8000,
   "baseAsset": "USDT",
-  "timeframe" : "5m",
+  "timeframe" : "1m",
 
-  "startYear" : 2022,
-  "startMonth" : 1,
+  "startYear" : 2021,
+  "startMonth" : 8,
   "endYear" : 2022,
-  "endMonth" : 5,
+  "endMonth" : 1,
 
   "baseFundAtStart" : 100,
-  "fee" : 0.002,
+  "fee" : 0.000,
   "isReinvest" : false,
 
-  "isLoadReport": true,
+  "isLoadReport": false,
   "reportDirectoryPath": "D:\\business\\backtester\\.report",
 
-  "dataDirectoryPath" : "D:\\business\\backtester\\data\\",
-  "pairsFilePath" : "D:\\business\\backtester\\data\\pairs.txt"
+  "dataDirectoryPath" : "D:\\business\\index-strategy\\data",
+  "pairsFilePath" : "D:\\business\\index-strategy\\data\\pairs.txt"
 }

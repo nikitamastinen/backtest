@@ -24,12 +24,6 @@ int main(int argc, char* argv[]) {
     if (shared::Config::getInstance().isLoadReport) {
       report::createCSVReport(backTest.coin, r, backTest.report);
     }
-
-    for (const auto& to : r) {
-      std::cout << to.toString() << std::endl << std::endl;
-    }
-
-    std::cout << std::endl << std::endl;
   });
 
   return 0;

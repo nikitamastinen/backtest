@@ -117,7 +117,6 @@ std::vector<lib::Candle> loadCandles(const std::string& coin,
       }
 
       std::string line;
-
       while (std::getline(fin, line)) {
         auto kline = parseCandles(line);
 
@@ -125,13 +124,13 @@ std::vector<lib::Candle> loadCandles(const std::string& coin,
           throw std::domain_error("required: (price_open > 0.0)");
         }
 
-        if (kline.price_high < epsilon) {
-          throw std::domain_error("required: (price_high > 0.0)");
-        }
-
-        if (kline.price_low < epsilon) {
-          throw std::domain_error("required: (price_low > 0.0)");
-        }
+//        if (kline.price_high < epsilon) {
+//          throw std::domain_error("required: (price_high > 0.0)");
+//        }
+//
+//        if (kline.price_low < epsilon) {
+//          throw std::domain_error("required: (price_low > 0.0)");
+//        }
 
         if (kline.price_close < epsilon) {
           throw std::domain_error("required: (price_close > 0.0)");
